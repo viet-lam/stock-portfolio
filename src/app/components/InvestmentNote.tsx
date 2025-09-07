@@ -40,7 +40,7 @@ export default function InvestmentNote() {
         <li>
           📉 <b>Vol20 (Volume 20):</b> Khối lượng trung bình 20 phiên gần nhất (~1 tháng vì 1 tháng có khoảng 20 ngày giao dịch).
           <br />👉 <b>Chỉ hành động mạnh</b> (bán, mua) khi <b>VolNow ≥ Vol20 × 1.3(30%)</b> → tín hiệu có sức mạnh (có dòng tiền tham gia).
-          <br />👉 <i>Khối lượng ≈ hoặc &lt; Vol20 → tín hiệu yếu</i>, dễ bị "bull trap" hay "bear trap".
+          <br />👉 <i>Khối lượng ≈ hoặc &lt; Vol20 → tín hiệu yếu</i>, dễ bị &quot;bull trap&quot; hay &quot;bear trap&quot;.
         </li>
 
         <li>

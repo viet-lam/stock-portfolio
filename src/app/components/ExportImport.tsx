@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useRef, useState } from "react";
@@ -17,7 +18,7 @@ export default function ExportImport({
   trades: Trade[];
   setTrades: (t: Trade[]) => void;
 }) {
-  const fileRef = useRef<HTMLInputElement | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [append, setAppend] = useState(false);
 
   const exportCSV = () => {
@@ -131,7 +132,7 @@ export default function ExportImport({
       </button>
 
       <input
-        ref={(r) => (fileRef.current = r)}
+        ref={fileRef}
         type="file"
         accept=".csv,.txt"
         style={{ display: "none" }}

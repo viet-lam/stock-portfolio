@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { Line } from "react-chartjs-2";
@@ -30,7 +31,7 @@ export default function StockChart({ ticker, range }: any) {
   useEffect(() => {
     async function load() {
       const history = await getHistory(ticker, range);
-      const ma20 = calcMA(history, 20, true); // trả về mảng
+      const ma20 = calcMA(history, 20); // trả về mảng
       setChartData({
         labels: history.map((h) => h.date),
         datasets: [
