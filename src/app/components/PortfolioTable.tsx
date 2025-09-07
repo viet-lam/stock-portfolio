@@ -36,6 +36,7 @@ export default function PortfolioTable({
     let mounted = true;
 
     async function renderPortfolio() {
+      // 1️⃣ Gom tất cả giao dịch theo từng mã chứng khoán
       const portfolio: Record<string, { shares: number; cost: number }> = {};
       for (const t of trades) {
         const tk = t.ticker;
@@ -49,37 +50,53 @@ export default function PortfolioTable({
         }
       }
 
+      // 3️⃣ Cập nhật dropdown chọn mã cho biểu đồ
       const tickers = Object.keys(portfolio).filter(
         (t) => portfolio[t].shares !== 0 || portfolio[t].cost !== 0
       );
 
       const out: Row[] = [];
 
+      // 4️⃣ Tính toán và hiển thị cho từng mã cổ phiếu
       for (const ticker of tickers) {
         try {
+          // 1️⃣ Lấy số lượng cổ phiếu hiện có trong portfolio
           const shares = portfolio[ticker].shares;
+
+        // 2️⃣ Tính giá vốn trung bình
+          // Nếu chưa có cổ phiếu (shares=0) thì gán avgCost = 0
           const avgCost = shares > 0 ? portfolio[ticker].cost / shares : 0;
 
-          // ✅ dùng getHistory như bạn đã viết
-          const hist = await getHistory(ticker, range);
+          // 3️⃣ Lấy dữ liệu lịch sử giá từ Yahoo Finance
+          const hist = await getHistory(ticker, range || "3mo");
           if (!hist || hist.length === 0) continue;
 
+          // 4️⃣ Giá & khối lượng hiện tại (phiên gần nhất)
           const last = hist[hist.length - 1];
           const currentPrice = last.close;
           const currentVol = last.volume;
 
+          // 5️⃣ Tính MA20 (Moving Average 20 phiên) → phản ánh xu hướng trung hạn
           const ma20Arr = calcMA(hist, 20);
-          const ma20 = ma20Arr[ma20Arr.length - 1] ?? null;
+          const ma20 = ma20Arr[ma20Arr.length - 1] ?? 0; // lấy giá trị MA20 mới nhất
 
+          // 4️⃣ Tính Vol20 (Volume trung bình 20 ngày)
           const vol20Arr = calcVolMA(hist, 20);
-          const vol20 = vol20Arr[vol20Arr.length - 1] ?? null;
+          const vol20 = vol20Arr[vol20Arr.length - 1] ?? 0;
 
-          const rsi14 = calcRSILast(hist, 14);
+          // 6️⃣ Tính RSI14 (Relative Strength Index 14 phiên) → đánh giá quá mua / quá bán
+          const rsi14 = calcRSILast(hist, 14) ?? 0;
 
-          const plPct = avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : null;
-          const pctVsMA20 = ma20 ? ((currentPrice - ma20) / ma20) * 100 : null;
-          const pctVsVol20 = vol20 ? ((currentVol - vol20) / vol20) * 100 : null;
+          // 7️⃣ Tính % lời/lỗ so với giá vốn
+          const plPct = avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : 0;
 
+          // Tính % chênh lệch so với MA20
+          const pctVsMA20 = ma20 ? ((currentPrice - ma20) / ma20) * 100 : 0;
+
+          // Tính % so với Vol20
+          const pctVsVol20 = vol20 ? ((currentVol - vol20) / vol20) * 100 : 0;
+
+          // 8️⃣ Xác định hành động theo rule chi tiết
           const action = getSignal(currentPrice, ma20, rsi14, avgCost, currentVol, vol20);
 
           out.push({
@@ -115,18 +132,23 @@ export default function PortfolioTable({
     <table className="min-w-full border border-gray-300 text-sm">
       <thead className="bg-gray-100">
         <tr>
-          <th className="border px-2">Mã CP</th>
-          <th className="border px-2">SL hiện tại</th>
-          <th className="border px-2">Giá vốn TB</th>
-          <th className="border px-2">% Lãi/Lỗ</th>
-          <th className="border px-2">Giá hiện tại</th>
-          <th className="border px-2">MA20</th>
-          <th className="border px-2">% so với MA20</th>
-          <th className="border px-2">RSI(14)</th>
-          <th className="border px-2">Vol</th>
-          <th className="border px-2">Vol20</th>
-          <th className="border px-2">% so với Vol20</th>
-          <th className="border px-2">Gợi ý</th>
+            <th className="border px-2" title="Mã cổ phiếu, ví dụ MSB.VN, SSI.VN">Mã CP</th>
+            <th className="border px-2" title="Số lượng cổ phiếu hiện đang nắm (tổng mua – tổng bán)">SL hiện tại</th>
+            <th className="border px-2" title="Giá vốn trung bình = Tổng chi phí mua / SL hiện tại">Giá vốn TB</th>
+            <th className="border px-2" title="% Lãi/Lỗ = (Giá hiện tại - Giá vốn TB) / Giá vốn TB * 100%">% Lãi/Lỗ</th>
+            <th className="border px-2" title="Giá đóng cửa hiện tại của cổ phiếu (Close Price mới nhất)">Giá hiện tại</th>
+            <th className="border px-2" title="MA20 = Trung bình 20 phiên gần nhất (gồm giá đóng cửa) → phản ánh xu hướng ngắn/trung hạn">MA20</th>
+            <th className="border px-2" title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%">% so với MA20</th>
+            <th className="border px-2" title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100">RSI(14)</th>
+            <th className="border px-2" title="Vol = Khối lượng giao dịch phiên gần nhất">Vol</th>
+            <th className="border px-2" title="Vol20 = Trung bình khối lượng 20 phiên">Vol20</th>
+            <th className="border px-2">% so với Vol20</th>
+            <th className="border px-2" title="Gợi ý hành động dựa trên rule đầu tư:
+            - Gom mạnh: Giá < MA20 -5% và RSI < 35
+            - Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
+            - Bán bớt: Giá > MA20 +10% và RSI > 70
+            - Cut-loss: Giá giảm > 15% so với Giá vốn TB">Gợi ý
+            </th>
         </tr>
       </thead>
       <tbody>
@@ -136,20 +158,20 @@ export default function PortfolioTable({
             className="hover:bg-gray-50 cursor-pointer"
             onClick={() => setSelectedTicker(r.ticker)}
           >
-            <td className="border px-2">{r.ticker}</td>
-            <td className="border px-2">{r.shares}</td>
-            <td className="border px-2">{r.avgCost ? r.avgCost.toFixed(2) : "-"}</td>
-            <td className={`border px-2 ${r.plPct !== null && r.plPct >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <td title="Bấm để xem biểu đồ" className="border px-2">{r.ticker}</td>
+            <td title="Số lượng cổ phiếu hiện có" className="border px-2">{r.shares}</td>
+            <td title="Giá vốn trung bình mỗi cổ phiếu" className="border px-2">{r.avgCost ? r.avgCost.toFixed(2) : "-"}</td>
+            <td title="% Lợi nhuận / Lỗ" className={`border px-2 ${r.plPct !== null && r.plPct >= 0 ? "text-green-600" : "text-red-600"}`}>
               {r.plPct !== null ? r.plPct.toFixed(2) + "%" : "-"}
             </td>
-            <td className="border px-2">{r.currentPrice?.toFixed(2) ?? "-"}</td>
-            <td className="border px-2">{r.ma20?.toFixed(2) ?? "-"}</td>
-            <td className="border px-2">{r.pctVsMA20?.toFixed(2) ?? "-"}</td>
-            <td className="border px-2">{r.rsi14?.toFixed(2) ?? "-"}</td>
-            <td className="border px-2">{r.currentVol?.toLocaleString() ?? "-"}</td>
-            <td className="border px-2">{r.vol20?.toLocaleString() ?? "-"}</td>
-            <td className="border px-2">{r.pctVsVol20?.toFixed(2) ?? "-"}</td>
-            <td className="border px-2 font-bold">{r.action}</td>
+            <td title="Giá hiện tại" className="border px-2">{r.currentPrice?.toFixed(2) ?? "-"}</td>
+            <td title="MA20 - Giá trung bình 20 phiên" className="border px-2">{r.ma20?.toFixed(2) ?? "-"}</td>
+            <td title="% chênh lệch so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%" className="border px-2">${r.pctVsMA20 !== null ? r.pctVsMA20.toFixed(2) + '%' : '-'}</td>
+            <td title="RSI14 - Chỉ số sức mạnh tương đối 14 phiên" className="border px-2">{r.rsi14?.toFixed(2) ?? "-"}</td>
+            <td title="Khối lượng hiện tại" className="border px-2">{r.currentVol?.toLocaleString() ?? "-"}</td>
+            <td title="Vol20 = Trung bình khối lượng 20 ngày" className="border px-2">{r.vol20?.toLocaleString() ?? "-"}</td>
+            <td title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20" className="border px-2">${r.pctVsVol20 ? r.pctVsVol20.toFixed(2) + "%" : "-"}</td>
+            <td title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss" className="border px-2 font-bold">{r.action}</td>
           </tr>
         ))}
       </tbody>

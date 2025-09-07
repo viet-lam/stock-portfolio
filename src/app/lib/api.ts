@@ -24,16 +24,17 @@ export async function getHistory(symbol: string, range = "3mo") {
   for (let i = 0; i < closes.length; i++) {
     const c = closes[i];
     const v = volumes[i];
-    if (c == null || v == null) continue;
+    if (c == null || v == null) continue; // bỏ dữ liệu trống
 
     arr.push({
-      date: new Date(ts[i] * 1000),
-      close: c,
-      volume: v,
+        date: new Date(ts[i] * 1000), // timestamp → Date
+        close: c,                     // giá đóng cửa
+        volume: v                     // khối lượng giao dịch
     });
   }
 
   if (!arr.length) throw new Error("Không có dữ liệu giá/khối lượng");
 
+      // Trả về mảng [{ date, close, volume }]
   return arr;
 }
