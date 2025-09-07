@@ -6,7 +6,7 @@
  * @param {number} ma20 - Giá trung bình 20 phiên (MA20)
  * @param {number} rsi14 - RSI 14 phiên
  * @param {number} avgCost - Giá vốn trung bình (nếu chưa mua = 0)
- * @returns {string} - Tín hiệu hành động: "Gom mạnh", "Mua DCA", "Bán bớt", "Giữ", "Cut-loss"
+ * @returns {string} - Tín hiệu hành động: "Gom mạnh", "DCA", "Bán bớt", "Giữ", "Cut-loss"
  */
 export function getSignal(
   currentPrice: number,
@@ -24,10 +24,10 @@ export function getSignal(
     return "📈 Gom mạnh";
   }
 
-  /* Rule Mua DCA */
+  /* Rule DCA */
   // if (priceVsMA20 >= -5 && priceVsMA20 <= 10 && rsi14 >= 40 && rsi14 <= 60 && volNow >= 0.8 * vol20) {
   if (priceVsMA20 >= -5 && priceVsMA20 <= 10 && rsi14 >= 40 && rsi14 <= 60) {
-    return "🟡 Mua DCA";
+    return "🟡 DCA";
   }
 
   /* Rule Bán bớt */
@@ -43,5 +43,5 @@ export function getSignal(
   }
 
   // Mặc định
-  return "⚪ Giữ(Nên mua DCA)";
+  return "⚪ Giữ (DCA)";
 }

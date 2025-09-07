@@ -26,7 +26,7 @@ export default function Home() {
   }, [trades]);
 
   return (
-    <main className="p-6 max-w-5xl mx-auto font-sans">
+    <main className="p-6 max-w-6xl mx-auto font-sans">
       {/* Tiêu đề */}
       <h2 className="text-center text-3xl font-bold mb-3 text-gray-800 flex items-center justify-center gap-2">
         📊 Quản lý danh mục chứng khoán
