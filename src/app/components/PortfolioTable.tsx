@@ -5,7 +5,12 @@ import { getHistory } from "../lib/api";
 import { calcMA, calcVolMA, calcRSILast } from "../lib/calc";
 import { getSignal } from "../lib/signal";
 
-type Trade = { ticker: string; type: "Mua" | "Bán"; qty: number; price: number };
+type Trade = {
+  ticker: string;
+  type: "Mua" | "Bán";
+  qty: number;
+  price: number;
+};
 type Row = {
   ticker: string;
   shares: number;
@@ -63,7 +68,7 @@ export default function PortfolioTable({
           // 1️⃣ Lấy số lượng cổ phiếu hiện có trong portfolio
           const shares = portfolio[ticker].shares;
 
-        // 2️⃣ Tính giá vốn trung bình
+          // 2️⃣ Tính giá vốn trung bình
           // Nếu chưa có cổ phiếu (shares=0) thì gán avgCost = 0
           const avgCost = shares > 0 ? portfolio[ticker].cost / shares : 0;
 
@@ -88,7 +93,8 @@ export default function PortfolioTable({
           const rsi14 = calcRSILast(hist, 14) ?? 0;
 
           // 7️⃣ Tính % lời/lỗ so với giá vốn
-          const plPct = avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : 0;
+          const plPct =
+            avgCost > 0 ? ((currentPrice - avgCost) / avgCost) * 100 : 0;
 
           // Tính % chênh lệch so với MA20
           const pctVsMA20 = ma20 ? ((currentPrice - ma20) / ma20) * 100 : 0;
@@ -97,7 +103,14 @@ export default function PortfolioTable({
           const pctVsVol20 = vol20 ? ((currentVol - vol20) / vol20) * 100 : 0;
 
           // 8️⃣ Xác định hành động theo rule chi tiết
-          const action = getSignal(currentPrice, ma20, rsi14, avgCost, currentVol, vol20);
+          const action = getSignal(
+            currentPrice,
+            ma20,
+            rsi14,
+            avgCost,
+            currentVol,
+            vol20
+          );
 
           out.push({
             ticker,
@@ -129,52 +142,427 @@ export default function PortfolioTable({
   }, [trades, range]);
 
   return (
-    <table className="min-w-full border border-gray-300 text-sm">
-      <thead className="bg-gray-100">
-        <tr>
-            <th className="border px-2" title="Mã cổ phiếu, ví dụ MSB.VN, SSI.VN">Mã CP</th>
-            <th className="border px-2" title="Số lượng cổ phiếu hiện đang nắm (tổng mua – tổng bán)">SL hiện tại</th>
-            <th className="border px-2" title="Giá vốn trung bình = Tổng chi phí mua / SL hiện tại">Giá vốn TB</th>
-            <th className="border px-2" title="% Lãi/Lỗ = (Giá hiện tại - Giá vốn TB) / Giá vốn TB * 100%">% Lãi/Lỗ</th>
-            <th className="border px-2" title="Giá đóng cửa hiện tại của cổ phiếu (Close Price mới nhất)">Giá hiện tại</th>
-            <th className="border px-2" title="MA20 = Trung bình 20 phiên gần nhất (gồm giá đóng cửa) → phản ánh xu hướng ngắn/trung hạn">MA20</th>
-            <th className="border px-2" title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%">% so với MA20</th>
-            <th className="border px-2" title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100">RSI(14)</th>
-            <th className="border px-2" title="Vol = Khối lượng giao dịch phiên gần nhất">Vol</th>
-            <th className="border px-2" title="Vol20 = Trung bình khối lượng 20 phiên">Vol20</th>
-            <th className="border px-2">% so với Vol20</th>
-            <th className="border px-2" title="Gợi ý hành động dựa trên rule đầu tư:
+    <>
+      {/* <div className="overflow-x-auto">
+        <table className="min-w-full border border-gray-300 text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th
+                className="border px-2"
+                title="Mã cổ phiếu, ví dụ MSB.VN, SSI.VN"
+              >
+                Mã CP
+              </th>
+              <th
+                className="border px-2"
+                title="Số lượng cổ phiếu hiện đang nắm (tổng mua – tổng bán)"
+              >
+                SL hiện tại
+              </th>
+              <th
+                className="border px-2"
+                title="Giá vốn trung bình = Tổng chi phí mua / SL hiện tại"
+              >
+                Giá vốn TB
+              </th>
+              <th
+                className="border px-2"
+                title="% Lãi/Lỗ = (Giá hiện tại - Giá vốn TB) / Giá vốn TB * 100%"
+              >
+                % Lãi/Lỗ
+              </th>
+              <th
+                className="border px-2"
+                title="Giá đóng cửa hiện tại của cổ phiếu (Close Price mới nhất)"
+              >
+                Giá hiện tại
+              </th>
+              <th
+                className="border px-2"
+                title="MA20 = Trung bình 20 phiên gần nhất (gồm giá đóng cửa) → phản ánh xu hướng ngắn/trung hạn"
+              >
+                MA20
+              </th>
+              <th
+                className="border px-2"
+                title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
+              >
+                % so với MA20
+              </th>
+              <th
+                className="border px-2"
+                title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100"
+              >
+                RSI(14)
+              </th>
+              <th
+                className="border px-2"
+                title="Vol = Khối lượng giao dịch phiên gần nhất"
+              >
+                Vol
+              </th>
+              <th
+                className="border px-2"
+                title="Vol20 = Trung bình khối lượng 20 phiên"
+              >
+                Vol20
+              </th>
+              <th className="border px-2">% so với Vol20</th>
+              <th
+                className="border px-2"
+                title="Gợi ý hành động dựa trên rule đầu tư:
             - Gom mạnh: Giá < MA20 -5% và RSI < 35
             - Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
             - Bán bớt: Giá > MA20 +10% và RSI > 70
-            - Cut-loss: Giá giảm > 15% so với Giá vốn TB">Gợi ý
-            </th>
-        </tr>
-      </thead>
-      <tbody>
+            - Cut-loss: Giá giảm > 15% so với Giá vốn TB"
+              >
+                Gợi ý
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr
+                key={r.ticker}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={() => setSelectedTicker(r.ticker)}
+              >
+                <td title="Bấm để xem biểu đồ" className="border px-2">
+                  {r.ticker}
+                </td>
+                <td title="Số lượng cổ phiếu hiện có" className="border px-2">
+                  {r.shares}
+                </td>
+                <td
+                  title="Giá vốn trung bình mỗi cổ phiếu"
+                  className="border px-2"
+                >
+                  {r.avgCost ? r.avgCost.toFixed(2) : "-"}
+                </td>
+                <td
+                  title="% Lợi nhuận / Lỗ"
+                  className={`border px-2 ${
+                    r.plPct !== null && r.plPct >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {r.plPct !== null ? r.plPct.toFixed(2) + "%" : "-"}
+                </td>
+                <td title="Giá hiện tại" className="border px-2">
+                  {r.currentPrice?.toFixed(2) ?? "-"}
+                </td>
+                <td
+                  title="MA20 - Giá trung bình 20 phiên"
+                  className="border px-2"
+                >
+                  {r.ma20?.toFixed(2) ?? "-"}
+                </td>
+                <td
+                  title="% chênh lệch so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
+                  className="border px-2"
+                >
+                  ${r.pctVsMA20 !== null ? r.pctVsMA20.toFixed(2) + "%" : "-"}
+                </td>
+                <td
+                  title="RSI14 - Chỉ số sức mạnh tương đối 14 phiên"
+                  className="border px-2"
+                >
+                  {r.rsi14?.toFixed(2) ?? "-"}
+                </td>
+                <td title="Khối lượng hiện tại" className="border px-2">
+                  {r.currentVol?.toLocaleString() ?? "-"}
+                </td>
+                <td
+                  title="Vol20 = Trung bình khối lượng 20 ngày"
+                  className="border px-2"
+                >
+                  {r.vol20?.toLocaleString() ?? "-"}
+                </td>
+                <td
+                  title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20"
+                  className="border px-2"
+                >
+                  ${r.pctVsVol20 ? r.pctVsVol20.toFixed(2) + "%" : "-"}
+                </td>
+                <td
+                  title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss"
+                  className="border px-2 font-bold"
+                >
+                  {r.action}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div> */}
+
+      {/* Table cho desktop */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full border border-gray-300 text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th
+                className="border px-2"
+                title="Mã cổ phiếu, ví dụ MSB.VN, SSI.VN"
+              >
+                Mã CP
+              </th>
+              <th
+                className="border px-2"
+                title="Số lượng cổ phiếu hiện đang nắm (tổng mua – tổng bán)"
+              >
+                SL hiện tại
+              </th>
+              <th
+                className="border px-2"
+                title="Giá vốn trung bình = Tổng chi phí mua / SL hiện tại"
+              >
+                Giá vốn TB
+              </th>
+              <th
+                className="border px-2"
+                title="% Lãi/Lỗ = (Giá hiện tại - Giá vốn TB) / Giá vốn TB * 100%"
+              >
+                % Lãi/Lỗ
+              </th>
+              <th
+                className="border px-2"
+                title="Giá đóng cửa hiện tại của cổ phiếu (Close Price mới nhất)"
+              >
+                Giá hiện tại
+              </th>
+              <th
+                className="border px-2"
+                title="MA20 = Trung bình 20 phiên gần nhất (gồm giá đóng cửa)"
+              >
+                MA20
+              </th>
+              <th
+                className="border px-2"
+                title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
+              >
+                % so với MA20
+              </th>
+              <th
+                className="border px-2"
+                title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100"
+              >
+                RSI(14)
+              </th>
+              <th
+                className="border px-2"
+                title="Vol = Khối lượng giao dịch phiên gần nhất"
+              >
+                Vol
+              </th>
+              <th
+                className="border px-2"
+                title="Vol20 = Trung bình khối lượng 20 phiên"
+              >
+                Vol20
+              </th>
+              <th
+                className="border px-2"
+                title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20"
+              >
+                % so với Vol20
+              </th>
+              <th
+                className="border px-2"
+                title={`Gợi ý hành động dựa trên rule đầu tư:
+- Gom mạnh: Giá < MA20 -5% và RSI < 35
+- Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
+- Bán bớt: Giá > MA20 +10% và RSI > 70
+- Cut-loss: Giá giảm > 15% so với Giá vốn TB`}
+              >
+                Gợi ý
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr
+                key={r.ticker}
+                className="hover:bg-gray-50 cursor-pointer"
+                onClick={() => setSelectedTicker(r.ticker)}
+              >
+                <td title="Bấm để xem biểu đồ" className="border px-2">
+                  {r.ticker}
+                </td>
+                <td title="Số lượng cổ phiếu hiện có" className="border px-2">
+                  {r.shares}
+                </td>
+                <td
+                  title="Giá vốn trung bình mỗi cổ phiếu"
+                  className="border px-2"
+                >
+                  {r.avgCost?.toFixed(2) ?? "-"}
+                </td>
+                <td
+                  title="% Lợi nhuận / Lỗ"
+                  className={`border px-2 ${
+                    r.plPct !== null && r.plPct >= 0
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {r.plPct !== null ? r.plPct.toFixed(2) + "%" : "-"}
+                </td>
+                <td title="Giá hiện tại" className="border px-2">
+                  {r.currentPrice?.toFixed(2) ?? "-"}
+                </td>
+                <td
+                  title="MA20 - Giá trung bình 20 phiên"
+                  className="border px-2"
+                >
+                  {r.ma20?.toFixed(2) ?? "-"}
+                </td>
+                <td
+                  title="% chênh lệch so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
+                  className="border px-2"
+                >
+                  {r.pctVsMA20 !== null ? r.pctVsMA20.toFixed(2) + "%" : "-"}
+                </td>
+                <td
+                  title="RSI14 - Chỉ số sức mạnh tương đối 14 phiên"
+                  className="border px-2"
+                >
+                  {r.rsi14?.toFixed(2) ?? "-"}
+                </td>
+                <td title="Khối lượng hiện tại" className="border px-2">
+                  {r.currentVol?.toLocaleString() ?? "-"}
+                </td>
+                <td
+                  title="Vol20 = Trung bình khối lượng 20 ngày"
+                  className="border px-2"
+                >
+                  {r.vol20?.toLocaleString() ?? "-"}
+                </td>
+                <td
+                  title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20"
+                  className="border px-2"
+                >
+                  {r.pctVsVol20 ? r.pctVsVol20.toFixed(2) + "%" : "-"}
+                </td>
+                <td
+                  title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss"
+                  className="border px-2 font-bold"
+                >
+                  {r.action}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Dạng thẻ cho mobile */}
+      <div className="md:hidden space-y-4">
         {rows.map((r) => (
-          <tr
+          <div
             key={r.ticker}
-            className="hover:bg-gray-50 cursor-pointer"
+            className="border rounded-lg p-3 shadow-sm hover:bg-gray-50 cursor-pointer"
             onClick={() => setSelectedTicker(r.ticker)}
           >
-            <td title="Bấm để xem biểu đồ" className="border px-2">{r.ticker}</td>
-            <td title="Số lượng cổ phiếu hiện có" className="border px-2">{r.shares}</td>
-            <td title="Giá vốn trung bình mỗi cổ phiếu" className="border px-2">{r.avgCost ? r.avgCost.toFixed(2) : "-"}</td>
-            <td title="% Lợi nhuận / Lỗ" className={`border px-2 ${r.plPct !== null && r.plPct >= 0 ? "text-green-600" : "text-red-600"}`}>
-              {r.plPct !== null ? r.plPct.toFixed(2) + "%" : "-"}
-            </td>
-            <td title="Giá hiện tại" className="border px-2">{r.currentPrice?.toFixed(2) ?? "-"}</td>
-            <td title="MA20 - Giá trung bình 20 phiên" className="border px-2">{r.ma20?.toFixed(2) ?? "-"}</td>
-            <td title="% chênh lệch so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%" className="border px-2">${r.pctVsMA20 !== null ? r.pctVsMA20.toFixed(2) + '%' : '-'}</td>
-            <td title="RSI14 - Chỉ số sức mạnh tương đối 14 phiên" className="border px-2">{r.rsi14?.toFixed(2) ?? "-"}</td>
-            <td title="Khối lượng hiện tại" className="border px-2">{r.currentVol?.toLocaleString() ?? "-"}</td>
-            <td title="Vol20 = Trung bình khối lượng 20 ngày" className="border px-2">{r.vol20?.toLocaleString() ?? "-"}</td>
-            <td title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20" className="border px-2">${r.pctVsVol20 ? r.pctVsVol20.toFixed(2) + "%" : "-"}</td>
-            <td title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss" className="border px-2 font-bold">{r.action}</td>
-          </tr>
+            <div
+              className="flex justify-between"
+              title="Mã cổ phiếu, ví dụ MSB.VN, SSI.VN"
+            >
+              <span className="font-bold">Mã CP:</span>
+              <span>{r.ticker}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="Số lượng cổ phiếu hiện có"
+            >
+              <span>SL hiện tại:</span>
+              <span>{r.shares}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="Giá vốn trung bình mỗi cổ phiếu"
+            >
+              <span>Giá vốn TB:</span>
+              <span>{r.avgCost?.toFixed(2) ?? "-"}</span>
+            </div>
+            <div className="flex justify-between" title="% Lợi nhuận / Lỗ">
+              <span>% Lãi/Lỗ:</span>
+              <span
+                className={
+                  r.plPct !== null && r.plPct >= 0
+                    ? "text-green-600"
+                    : "text-red-600"
+                }
+              >
+                {r.plPct !== null ? r.plPct.toFixed(2) + "%" : "-"}
+              </span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="Giá đóng cửa hiện tại của cổ phiếu (Close Price mới nhất)"
+            >
+              <span>Giá hiện tại:</span>
+              <span>{r.currentPrice?.toFixed(2) ?? "-"}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="MA20 = Trung bình 20 phiên gần nhất (gồm giá đóng cửa)"
+            >
+              <span>MA20:</span>
+              <span>{r.ma20?.toFixed(2) ?? "-"}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
+            >
+              <span>% vs MA20:</span>
+              <span>
+                {r.pctVsMA20 !== null ? r.pctVsMA20.toFixed(2) + "%" : "-"}
+              </span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100"
+            >
+              <span>RSI(14):</span>
+              <span>{r.rsi14?.toFixed(2) ?? "-"}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="Vol = Khối lượng giao dịch phiên gần nhất"
+            >
+              <span>Vol:</span>
+              <span>{r.currentVol?.toLocaleString() ?? "-"}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="Vol20 = Trung bình khối lượng 20 phiên"
+            >
+              <span>Vol20:</span>
+              <span>{r.vol20?.toLocaleString() ?? "-"}</span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20"
+            >
+              <span>% vs Vol20:</span>
+              <span>{r.pctVsVol20 ? r.pctVsVol20.toFixed(2) + "%" : "-"}</span>
+            </div>
+            <div
+              className="flex justify-between font-bold"
+              title={`Gợi ý hành động dựa trên rule đầu tư:
+- Gom mạnh: Giá < MA20 -5% và RSI < 35
+- Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
+- Bán bớt: Giá > MA20 +10% và RSI > 70
+- Cut-loss: Giá giảm > 15% so với Giá vốn TB`}
+            >
+              <span>Gợi ý:</span>
+              <span>{r.action}</span>
+            </div>
+          </div>
         ))}
-      </tbody>
-    </table>
+      </div>
+    </>
   );
 }
