@@ -28,7 +28,7 @@ export default function Home() {
   return (
     <main className="p-6 max-w-5xl mx-auto font-sans">
       <h2 className="text-center text-2xl mb-4">
-        📊 Quản lý danh mục chứng khoán (VN)
+        📊 Quản lý danh mục chứng khoán
       </h2>
 
       <p className="text-gray-500 text-sm text-center mb-4">
