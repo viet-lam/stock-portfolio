@@ -122,38 +122,46 @@ export default function ExportImport({
   };
 
   return (
-    <div className="mt-4 flex items-center gap-3">
-      <button
-        type="button"
-        onClick={exportCSV}
-        className="px-3 py-1 border rounded bg-white hover:shadow"
-      >
-        📤 Export CSV
-      </button>
+    <>
+      <div className="mt-4 flex flex-wrap items-center gap-3 p-3 bg-white shadow rounded-lg">
+        {/* Export CSV */}
+        <button
+          type="button"
+          onClick={exportCSV}
+          className="px-4 py-2 border rounded-lg bg-white shadow-sm hover:shadow-md transition w-full sm:w-auto"
+        >
+          📤 Export CSV
+        </button>
 
-      <input
-        ref={fileRef}
-        type="file"
-        accept=".csv,.txt"
-        style={{ display: "none" }}
-        onChange={handleFileChange}
-      />
-      <button
-        type="button"
-        onClick={onImportClick}
-        className="px-3 py-1 border rounded bg-white hover:shadow"
-      >
-        📥 Import CSV
-      </button>
-
-      <label className="ml-2 text-sm flex items-center gap-2">
+        {/* Hidden input cho Import */}
         <input
-          type="checkbox"
-          checked={append}
-          onChange={(e) => setAppend(e.target.checked)}
+          ref={fileRef}
+          type="file"
+          accept=".csv,.txt"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
         />
-        <span className="select-none">Append (ghép vào thay vì ghi đè)</span>
-      </label>
-    </div>
+
+        {/* Import CSV */}
+        <button
+          type="button"
+          onClick={onImportClick}
+          className="px-4 py-2 border rounded-lg bg-white shadow-sm hover:shadow-md transition w-full sm:w-auto"
+        >
+          📥 Import CSV
+        </button>
+
+        {/* Checkbox Append */}
+        <label className="flex items-center gap-2 text-sm w-full sm:w-auto">
+          <input
+            type="checkbox"
+            checked={append}
+            onChange={(e) => setAppend(e.target.checked)}
+            className="h-4 w-4"
+          />
+          <span className="select-none">Append (ghép vào thay vì ghi đè)</span>
+        </label>
+      </div>
+    </>
   );
 }

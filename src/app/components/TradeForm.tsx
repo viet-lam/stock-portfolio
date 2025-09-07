@@ -31,42 +31,50 @@ export default function TradeForm({ trades, setTrades }: any) {
   };
 
   return (
-    <form onSubmit={addTrade} className="flex flex-wrap gap-2 justify-center">
-      <input
-        value={ticker}
-        onChange={(e) => setTicker(e.target.value)}
-        placeholder="Mã CP (FPT hoặc FPT.VN)"
-        required
-        className="border p-2 rounded"
-      />
-      <input
-        type="number"
-        step="0.01"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-        placeholder="Giá (VNĐ)"
-        required
-        className="border p-2 rounded"
-      />
-      <input
-        type="number"
-        value={qty}
-        onChange={(e) => setQty(e.target.value)}
-        placeholder="Số lượng"
-        required
-        className="border p-2 rounded"
-      />
-      <select
-        value={type}
-        onChange={(e) => setType(e.target.value)}
-        className="border p-2 rounded"
+    <>
+      <form
+        onSubmit={addTrade}
+        className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 p-3 bg-white shadow-md rounded-lg"
       >
-        <option value="Mua">Mua</option>
-        <option value="Bán">Bán</option>
-      </select>
-      <button className="bg-blue-500 text-white px-4 py-2 rounded">
-        Thêm giao dịch
-      </button>
-    </form>
+        <input
+          value={ticker}
+          onChange={(e) => setTicker(e.target.value)}
+          placeholder="Mã CP (FPT hoặc FPT.VN)"
+          required
+          className="border p-2.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          type="number"
+          step="0.01"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="Giá (VNĐ)"
+          required
+          className="border p-2.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <input
+          type="number"
+          value={qty}
+          onChange={(e) => setQty(e.target.value)}
+          placeholder="Số lượng"
+          required
+          className="border p-2.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+        />
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="border p-2.5 rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="Mua">Mua</option>
+          <option value="Bán">Bán</option>
+        </select>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2.5 rounded-lg w-full hover:bg-blue-600 transition"
+        >
+          Thêm giao dịch
+        </button>
+      </form>
+    </>
   );
 }
