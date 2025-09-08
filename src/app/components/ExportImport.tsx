@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import React, { useRef, useState } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Trade = {
   ticker: string;
@@ -20,6 +21,7 @@ export default function ExportImport({
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [append, setAppend] = useState(false);
+  const [isOpen, setIsOpen] = useState(false); // trạng thái thu/mở
 
   const exportCSV = () => {
     if (!trades || trades.length === 0) {
@@ -30,7 +32,6 @@ export default function ExportImport({
     const rows = trades.map((t) =>
       [
         t.ticker,
-        // đảm bảo ghi number đúng định dạng
         Number(t.price).toString(),
         Number(t.qty).toString(),
         t.type,
@@ -56,20 +57,19 @@ export default function ExportImport({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     try {
       const text = await file.text();
       const lines = text
         .split(/\r?\n/)
         .map((l) => l.trim())
         .filter((l) => l.length > 0);
+
       if (lines.length <= 1) {
         alert("File CSV không có dữ liệu (chỉ header hoặc rỗng).");
         e.currentTarget.value = "";
         return;
       }
 
-      // header có thể có BOM
       const rawHeader = lines[0].replace(/^\uFEFF/, "");
       const cols = rawHeader.split(",").map((c) => c.trim().toLowerCase());
 
@@ -81,7 +81,6 @@ export default function ExportImport({
           cols.forEach((col, idx) => {
             obj[col] = parts[idx] !== undefined ? parts[idx].trim() : "";
           });
-          // Basic validation: cần ticker + qty + price
           if (!obj.ticker) return null;
           const t: Trade = {
             ticker: String(obj.ticker).toUpperCase(),
@@ -100,7 +99,6 @@ export default function ExportImport({
         return;
       }
 
-      // nếu không append và đang có data thì confirm trước khi ghi đè
       if (!append && trades.length > 0) {
         const ok = confirm(
           `Bạn đang thay thế ${trades.length} giao dịch hiện tại bằng ${parsed.length} giao dịch từ file. Tiếp tục?`
@@ -122,46 +120,69 @@ export default function ExportImport({
   };
 
   return (
-    <>
-      <div className="mt-4 flex flex-wrap items-center gap-3 p-3 bg-white shadow rounded-lg">
-        {/* Export CSV */}
-        <button
-          type="button"
-          onClick={exportCSV}
-          className="px-4 py-2 border rounded-lg bg-white shadow-sm hover:shadow-md transition w-full sm:w-auto"
-        >
-          📤 Export CSV
-        </button>
+    <div className="mt-4 bg-white shadow rounded-lg overflow-hidden">
+      {/* Header thu/mở */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between px-4 py-2 text-left text-lg font-semibold hover:bg-gray-100"
+      >
+        <span>📂 Export / Import CSV</span>
+        {isOpen ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+      </button>
 
-        {/* Hidden input cho Import */}
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".csv,.txt"
-          style={{ display: "none" }}
-          onChange={handleFileChange}
-        />
+      {/* Nội dung có animation */}
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            key="export-import"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="flex flex-wrap items-center gap-3 p-3 bg-white"
+          >
+            {/* Export CSV */}
+            <button
+              type="button"
+              onClick={exportCSV}
+              className="px-4 py-2 border rounded-lg bg-white shadow-sm hover:shadow-md transition w-full sm:w-auto"
+            >
+              📤 Export CSV
+            </button>
 
-        {/* Import CSV */}
-        <button
-          type="button"
-          onClick={onImportClick}
-          className="px-4 py-2 border rounded-lg bg-white shadow-sm hover:shadow-md transition w-full sm:w-auto"
-        >
-          📥 Import CSV
-        </button>
+            {/* Hidden input cho Import */}
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,.txt"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
 
-        {/* Checkbox Append */}
-        <label className="flex items-center gap-2 text-sm w-full sm:w-auto">
-          <input
-            type="checkbox"
-            checked={append}
-            onChange={(e) => setAppend(e.target.checked)}
-            className="h-4 w-4"
-          />
-          <span className="select-none">Append (ghép vào thay vì ghi đè)</span>
-        </label>
-      </div>
-    </>
+            {/* Import CSV */}
+            <button
+              type="button"
+              onClick={onImportClick}
+              className="px-4 py-2 border rounded-lg bg-white shadow-sm hover:shadow-md transition w-full sm:w-auto"
+            >
+              📥 Import CSV
+            </button>
+
+            {/* Checkbox Append */}
+            <label className="flex items-center gap-2 text-sm w-full sm:w-auto">
+              <input
+                type="checkbox"
+                checked={append}
+                onChange={(e) => setAppend(e.target.checked)}
+                className="h-4 w-4"
+              />
+              <span className="select-none">
+                Append (ghép vào thay vì ghi đè)
+              </span>
+            </label>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

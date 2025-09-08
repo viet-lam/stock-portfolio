@@ -8,6 +8,7 @@ import PortfolioTable from "./components/PortfolioTable";
 import StockChart from "./components/StockChart";
 import ExportImport from "./components/ExportImport";
 import InvestmentNote from "./components/InvestmentNote";
+import ChartSection from "./components/ChartSection";
 
 export default function Home() {
   const [trades, setTrades] = useState<any[]>([]);
@@ -40,14 +41,8 @@ export default function Home() {
         đủ mã như <b>SHB.HN</b>.
       </p>
 
-      {/* Thêm cổ */}
-      <TradeForm trades={trades} setTrades={setTrades} />
-
-      {/* Export / Import */}
-      <ExportImport trades={trades} setTrades={setTrades} />
-
       {/* Bảng */}
-      <div className="mt-4 p-3 bg-white shadow rounded-lg">
+      <div className="p-3 bg-white shadow rounded-lg">
         <PortfolioTable
           trades={trades}
           setSelectedTicker={setSelectedTicker}
@@ -55,39 +50,20 @@ export default function Home() {
         />
       </div>
 
-      {/* Chart */}
-      <div className="flex flex-wrap items-center gap-3 mt-4 p-3 bg-white shadow rounded-lg">
-        {/* Badge */}
-        <span className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-xs font-medium">
-          Biểu đồ
-        </span>
+      {/* Chart Section */}
+      <ChartSection
+        trades={trades}
+        selectedTicker={selectedTicker}
+        setSelectedTicker={setSelectedTicker}
+        range={range}
+        setRange={setRange}
+      />
 
-        {/* Select ticker */}
-        <select
-          value={selectedTicker || ""}
-          onChange={(e) => setSelectedTicker(e.target.value)}
-          className="px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 hover:border-indigo-400 transition w-full sm:w-auto"
-        >
-          <option value="">--Chọn mã--</option>
-          {Array.from(new Set(trades.map((t) => t.ticker))).map((t) => (
-            <option key={t}>{t}</option>
-          ))}
-        </select>
+      {/* Thêm cổ */}
+      <TradeForm trades={trades} setTrades={setTrades} />
 
-        {/* Select range */}
-        <select
-          value={range}
-          onChange={(e) => setRange(e.target.value)}
-          className="px-3 py-2 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 hover:border-indigo-400 transition w-full sm:w-auto"
-        >
-          <option value="3mo">3 tháng</option>
-          <option value="6mo">6 tháng</option>
-          <option value="1y">1 năm</option>
-          <option value="2y">2 năm</option>
-        </select>
-      </div>
-
-      {selectedTicker && <StockChart ticker={selectedTicker} range={range} />}
+      {/* Export / Import */}
+      <ExportImport trades={trades} setTrades={setTrades} />
 
       <InvestmentNote />
     </main>

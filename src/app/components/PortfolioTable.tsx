@@ -178,6 +178,41 @@ export default function PortfolioTable({
     return `${fmt}%`; // equals 0
   };
 
+  // --- RSI format with icons (không đổi text/tooltip) ---
+  const RSIFormat= ( value: number | null) => {
+    if (value === null || value === undefined) {
+      return (
+        <span
+          className="flex items-center gap-1 bg-gray-100 text-gray-800 px-2 py-0.5 rounded-full text-xs font-medium"
+          aria-hidden
+        >
+          <Minus size={12} />-
+        </span>
+      );
+    }
+
+    let bg = "bg-gray-100 text-gray-800";
+    let icon = <Minus size={12} />;
+    if (value <= 35) {
+      bg = "bg-green-100 text-green-700";
+      icon = <ChevronUp size={12} />;
+    }
+    if (value >= 70) {
+      bg = "bg-red-100 text-red-700";
+      icon = <ChevronDown size={12} />;
+    }
+
+    return (
+      <span
+        className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${bg}`}
+        aria-hidden
+      >
+        {icon}
+        {formatNumber(value)}
+      </span>
+    );
+  };
+
   // --- Percent chip with icons (không đổi text/tooltip) ---
   const PercentChip = ({ value }: { value: number | null | undefined }) => {
     if (value === null || value === undefined) {
@@ -500,7 +535,7 @@ export default function PortfolioTable({
                   title="RSI14 - Chỉ số sức mạnh tương đối 14 phiên"
                   className="border p-2"
                 >
-                  {formatNumber(r.rsi14)}
+                  {RSIFormat(r.rsi14)}
                 </td>
                 <td title="Khối lượng hiện tại" className="border p-2">
                   {formatNumber(r.currentVol, 0)}
@@ -558,7 +593,7 @@ export default function PortfolioTable({
               <span>Giá vốn TB:</span>
               <span>{formatCurrency(r.avgCost)}</span>
             </div>
-            <div className="flex justify-between" title="% Lợi nhuận / Lỗ">
+            <div className="flex justify-between font-bold" title="% Lợi nhuận / Lỗ">
               <span>% Lãi/Lỗ:</span>
               <span
                 className={
@@ -585,7 +620,7 @@ export default function PortfolioTable({
               <span>{formatCurrency(r.ma20)}</span>
             </div>
             <div
-              className="flex justify-between"
+              className="flex justify-between font-bold"
               title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
             >
               <span>% vs MA20:</span>
@@ -594,11 +629,11 @@ export default function PortfolioTable({
               </span>
             </div>
             <div
-              className="flex justify-between"
+              className="flex justify-between font-bold"
               title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100"
             >
               <span>RSI(14):</span>
-              <span>{formatNumber(r.rsi14)}</span>
+              <span>{RSIFormat(r.rsi14)}</span>
             </div>
             <div
               className="flex justify-between"
