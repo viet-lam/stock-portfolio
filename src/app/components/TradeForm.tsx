@@ -36,7 +36,7 @@ export default function TradeForm({ trades, setTrades }: any) {
 
   return (
     <>
-      <div className="mt-4 bg-white shadow-md rounded-lg overflow-hidden">
+      <div className="mt-4 bg-white shadow rounded-lg overflow-hidden">
         {/* Header thu/mở */}
         <button
           onClick={toggleForm}

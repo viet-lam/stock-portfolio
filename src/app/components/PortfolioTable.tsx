@@ -417,6 +417,12 @@ export default function PortfolioTable({
               </th>
               <th
                 className="border p-2"
+                title="% Lãi/Lỗ = (Giá hiện tại - Giá vốn TB) / Giá vốn TB * 100%"
+              >
+                % Lãi/Lỗ
+              </th>
+              <th
+                className="border p-2"
                 title="Số lượng cổ phiếu hiện đang nắm (tổng mua – tổng bán)"
               >
                 SL hiện tại
@@ -426,12 +432,6 @@ export default function PortfolioTable({
                 title="Giá vốn trung bình = Tổng chi phí mua / SL hiện tại"
               >
                 Giá vốn TB
-              </th>
-              <th
-                className="border p-2"
-                title="% Lãi/Lỗ = (Giá hiện tại - Giá vốn TB) / Giá vốn TB * 100%"
-              >
-                % Lãi/Lỗ
               </th>
               <th
                 className="border p-2"
@@ -497,16 +497,7 @@ export default function PortfolioTable({
                 <td title="Bấm để xem biểu đồ" className="border p-2">
                   {r.ticker}
                 </td>
-                <td title="Số lượng cổ phiếu hiện có" className="border p-2">
-                  {formatNumber(r.shares, 0)}
-                </td>
-                <td
-                  title="Giá vốn trung bình mỗi cổ phiếu"
-                  className="border p-2"
-                >
-                  {formatCurrency(r.avgCost)}
-                </td>
-                <td
+                                <td
                   title="% Lợi nhuận / Lỗ"
                   className={`border p-2 ${
                     r.plPct !== null && r.plPct >= 0
@@ -515,6 +506,15 @@ export default function PortfolioTable({
                   }`}
                 >
                   <PercentChip value={r.plPct} />
+                </td>
+                <td title="Số lượng cổ phiếu hiện có" className="border p-2">
+                  {formatNumber(r.shares, 0)}
+                </td>
+                <td
+                  title="Giá vốn trung bình mỗi cổ phiếu"
+                  className="border p-2"
+                >
+                  {formatCurrency(r.avgCost)}
                 </td>
                 <td title="Giá hiện tại" className="border p-2">
                   {formatCurrency(r.currentPrice)}
@@ -550,7 +550,8 @@ export default function PortfolioTable({
                   title="% so với Vol20 = (Vol hiện tại – Vol20) / Vol20"
                   className="border p-2"
                 >
-                  <PercentChip value={r.pctVsVol20} />
+                  {/* <PercentChip value={r.pctVsVol20} /> */}
+                  {formatPercent(r.pctVsVol20)}
                 </td>
                 <td
                   title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss"
@@ -576,8 +577,20 @@ export default function PortfolioTable({
               className="flex justify-between"
               title="Mã cổ phiếu, ví dụ MSB.VN, SSI.VN"
             >
-              <span className="font-bold">Mã CP:</span>
-              <span>{r.ticker}</span>
+              <span>Mã CP:</span>
+              <span className="font-bold">{r.ticker}</span>
+            </div>
+            <div className="flex justify-between font-bold" title="% Lợi nhuận / Lỗ">
+              <span>% Lãi/Lỗ:</span>
+              <span
+                className={
+                  r.plPct !== null && r.plPct >= 0
+                    ? "text-green-600"
+                    : "text-red-600"
+                }
+              >
+                <PercentChip value={r.plPct} />
+              </span>
             </div>
             <div
               className="flex justify-between"
@@ -592,18 +605,6 @@ export default function PortfolioTable({
             >
               <span>Giá vốn TB:</span>
               <span>{formatCurrency(r.avgCost)}</span>
-            </div>
-            <div className="flex justify-between font-bold" title="% Lợi nhuận / Lỗ">
-              <span>% Lãi/Lỗ:</span>
-              <span
-                className={
-                  r.plPct !== null && r.plPct >= 0
-                    ? "text-green-600"
-                    : "text-red-600"
-                }
-              >
-                <PercentChip value={r.plPct} />
-              </span>
             </div>
             <div
               className="flex justify-between"
@@ -655,11 +656,12 @@ export default function PortfolioTable({
             >
               <span>% vs Vol20:</span>
               <span>
-                <PercentChip value={r.pctVsVol20} />
+                {/* <PercentChip value={r.pctVsVol20} /> */}
+                {formatPercent(r.pctVsVol20)}
               </span>
             </div>
             <div
-              className="flex justify-between font-bold whitespace-nowrap"
+              className="flex justify-between whitespace-nowrap"
               title={`Gợi ý hành động dựa trên rule đầu tư:
 - Gom mạnh: Giá < MA20 -5% và RSI < 35
 - Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
@@ -667,7 +669,7 @@ export default function PortfolioTable({
 - Cut-loss: Giá giảm > 15% so với Giá vốn TB`}
             >
               <span>Gợi ý:</span>
-              <span>{r.action}</span>
+              <span className="font-bold">{r.action}</span>
             </div>
           </div>
         ))}
