@@ -13,27 +13,30 @@ export default function TradeForm({ trades, setTrades }: any) {
   const toggleForm = () => setIsOpen(!isOpen);
 
   function normalizeTicker(input: string) {
-    const t = input.toUpperCase();
+    const t = input.toUpperCase(); // chuyển input thành chữ in hoa
     if (t.endsWith(".VN") || t.endsWith(".HN")) return t;
+    // nếu đã có đuôi .VN (HOSE) hoặc .HN (HNX) thì giữ nguyên
     return t + ".VN";
+    // mặc định gắn thêm .VN nếu chưa có
   }
 
   const addTrade = (e: any) => {
-    e.preventDefault();
-    if (!ticker || !price || !qty) return;
-    const trade = {
-      ticker: normalizeTicker(ticker),
-      price: parseFloat(price),
-      qty: parseInt(qty),
-      type,
-      ts: Date.now(),
-    };
-    setTrades([...trades, trade]);
-    setTicker("");
-    setPrice("");
-    setQty("");
-  };
+    e.preventDefault(); // chặn hành vi mặc định của form (reload page)
+    if (!ticker || !price || !qty) return; // nếu thiếu dữ liệu thì không làm gì
 
+    const trade = {
+      ticker: normalizeTicker(ticker), // chuẩn hóa mã CP
+      price: parseFloat(price), // chuyển giá sang số thực
+      qty: parseInt(qty), // chuyển số lượng sang số nguyên
+      type, // loại giao dịch (có thể là 'BUY' hoặc 'SELL')
+      ts: Date.now(), // timestamp thời điểm thêm
+    };
+
+    setTrades([...trades, trade]); // thêm giao dịch mới vào danh sách
+    setTicker(""); // reset input ticker
+    setPrice(""); // reset input price
+    setQty(""); // reset input qty
+  };
   return (
     <>
       <div className="mt-4 bg-white shadow rounded-lg overflow-hidden">

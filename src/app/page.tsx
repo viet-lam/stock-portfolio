@@ -29,7 +29,7 @@ export default function Home() {
     <main className="p-6 max-w-6xl mx-auto font-sans">
       {/* Tiêu đề */}
       <h2 className="text-center text-3xl font-bold mb-3 text-gray-800 flex items-center justify-center gap-2">
-        📊 Danh mục chứng khoán
+        📊 Stock Portfolio
       </h2>
 
       {/* Mô tả hướng dẫn */}
