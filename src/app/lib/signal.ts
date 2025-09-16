@@ -8,7 +8,7 @@
  * @param {number} avgCost - Giá vốn trung bình (nếu chưa mua = 0)
  * @returns {string} - Tín hiệu hành động: "Gom mạnh", "DCA", "Bán bớt", "Giữ", "Cut-loss"
  */
-export function getSignal(
+export function getSignalShortTerm(
   currentPrice: number,
   ma20: number,
   rsi14: number,
@@ -44,4 +44,40 @@ export function getSignal(
 
   // Mặc định
   return "⚪ Giữ (DCA)";
+}
+
+export function getSignalLongTerm(
+  currentPrice: number,
+  ma200: number,
+  rsi14W1: number,
+  rsi14D1: number,
+  high6M: number
+): string {
+  // % lệch so với MA200
+  const priceVsMA200 = ((currentPrice - ma200) / ma200) * 100;
+
+  // % lệch so với đỉnh 6 tháng
+  const priceVsHigh6M = ((currentPrice - high6M) / high6M) * 100;
+
+  /* ===== Rule MUA ===== */
+  if (
+    priceVsHigh6M <= -10 && // giảm 10% so với đỉnh 6 tháng
+    currentPrice > ma200 && // giá trên MA200
+    rsi14W1 < 55 && // RSI14(W1) < 55
+    rsi14D1 < 40 // RSI14(D1) < 40
+  ) {
+    return "📈 MUA";
+  }
+
+  /* ===== Rule BÁN ===== */
+  if (
+    (rsi14W1 > 65 && // RSI14(W1) > 65
+    priceVsMA200 >= 25) || // giá > MA200 25%
+    currentPrice >= high6M // giá >= đỉnh 6 tháng
+  ) {
+    return "🔴 BÁN";
+  }
+
+  /* ===== Giữ (mặc định) ===== */
+  return "🟡 DCA";
 }

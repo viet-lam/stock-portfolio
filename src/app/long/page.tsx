@@ -3,11 +3,11 @@
 
 import { useEffect, useState } from "react";
 
-import TradeForm from "./components/TradeForm";
-import PortfolioTable from "./components/PortfolioTable";
-import ExportImport from "./components/ExportImport";
-import InvestmentNote from "./components/InvestmentNote";
-import ChartSection from "./components/ChartSection";
+import TradeForm from "../components/TradeForm";
+import PortfolioTable from "../components/PortfolioTable";
+import ExportImport from "../components/ExportImport";
+import InvestmentNote from "../components/InvestmentNote";
+import ChartSection from "../components/ChartSection";
 
 export default function Home() {
   const [trades, setTrades] = useState<any[]>([]);
@@ -26,7 +26,7 @@ export default function Home() {
   }, [trades]);
 
   return (
-    <main className="p-6 max-w-max mx-auto font-sans">
+    <main className="p-6 max-w-6xl mx-auto font-sans">
       {/* Tiêu đề */}
       <h2 className="text-center text-3xl font-bold mb-3 text-gray-800 flex items-center justify-center gap-2">
         📊 Stock Portfolio

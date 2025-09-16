@@ -85,3 +85,32 @@ export function calcVolMA(
 
   return volMA;
 }
+
+/**
+ * Tính giá đỉnh (High) trong X tháng gần nhất
+ * @param series mảng dữ liệu giá, mỗi phần tử gồm { high: number, timestamp: number }
+ * @param months số tháng cần tính (mặc định = 5)
+ * @returns giá đỉnh trong khoảng thời gian đó, hoặc null nếu không có dữ liệu
+ */
+export function calcHighInMonths(
+  series: { high: number; timestamp: number }[],
+  months = 6
+): number | null {
+  if (!series.length) return null;
+
+  const now = Date.now() / 1000; // timestamp hiện tại (s)
+  const cutoff = now - months * 30 * 24 * 60 * 60; // ~months tháng trước
+
+  let maxHigh: number | null = null;
+
+  for (let i = 0; i < series.length; i++) {
+    const { high, timestamp } = series[i];
+    if (timestamp >= cutoff && high != null) {
+      if (maxHigh === null || high > maxHigh) {
+        maxHigh = high;
+      }
+    }
+  }
+
+  return maxHigh;
+}

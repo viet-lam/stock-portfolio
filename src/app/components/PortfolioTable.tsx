@@ -4,8 +4,8 @@ import { ChevronUp, ChevronDown, Minus } from "lucide-react";
 
 import { useEffect, useState } from "react";
 import { getHistory } from "../lib/api";
-import { calcMA, calcVolMA, calcRSILast } from "../lib/calc";
-import { getSignal } from "../lib/signal";
+import { calcMA, calcVolMA, calcRSILast, calcHighInMonths } from "../lib/calc";
+import { getSignalShortTerm, getSignalLongTerm } from "../lib/signal";
 
 type Trade = {
   ticker: string;
@@ -20,12 +20,18 @@ type Row = {
   plPct: number | null;
   currentPrice: number | null;
   ma20: number | null;
+  ma200: number | null;
+  high6M: number | null;
   pctVsMA20: number | null;
-  rsi14: number | null;
+  pctVsMA200: number | null;
+  pctVsHigh6M: number | null;
+  rsi14D1: number | null;
+  rsi14W1: number | null;
   currentVol: number | null;
   vol20: number | null;
   pctVsVol20: number | null;
-  action: string;
+  actionShortTerm: string;
+  actionLongTerm: string;
 };
 
 export default function PortfolioTable({
@@ -67,6 +73,8 @@ export default function PortfolioTable({
       // 4️⃣ Tính toán và hiển thị cho từng mã cổ phiếu
       for (const ticker of tickers) {
         try {
+          console.info("ticker: ", ticker)
+
           // 1️⃣ Lấy số lượng cổ phiếu hiện có trong portfolio
           const shares = portfolio[ticker].shares;
 
@@ -75,13 +83,18 @@ export default function PortfolioTable({
           const avgCost = shares > 0 ? portfolio[ticker].cost / shares : 0;
 
           // 3️⃣ Lấy dữ liệu lịch sử giá từ Yahoo Finance
-          const hist = await getHistory(ticker, range || "3mo");
+          // const hist = await getHistory(ticker, range || "3mo");
+          const hist = await getHistory(ticker, "2y");
           if (!hist || hist.length === 0) continue;
 
           // 4️⃣ Giá & khối lượng hiện tại (phiên gần nhất)
           const last = hist[hist.length - 1];
           const currentPrice = last.close;
           const currentVol = last.volume;
+
+          // 5️⃣ Tính MA200 (Moving Average 200 phiên) → phản ánh xu hướng dài hạn
+          const ma200Arr = calcMA(hist, 200);
+          const ma200 = ma200Arr[ma200Arr.length - 1] ?? 0; // lấy giá trị MA200 mới nhất
 
           // 5️⃣ Tính MA20 (Moving Average 20 phiên) → phản ánh xu hướng trung hạn
           const ma20Arr = calcMA(hist, 20);
@@ -92,7 +105,7 @@ export default function PortfolioTable({
           const vol20 = vol20Arr[vol20Arr.length - 1] ?? 0;
 
           // 6️⃣ Tính RSI14 (Relative Strength Index 14 phiên) → đánh giá quá mua / quá bán
-          const rsi14 = calcRSILast(hist, 14) ?? 0;
+          const rsi14D1 = calcRSILast(hist, 14) ?? 0;
 
           // 7️⃣ Tính % lời/lỗ so với giá vốn
           const plPct =
@@ -101,18 +114,48 @@ export default function PortfolioTable({
           // Tính % chênh lệch so với MA20
           const pctVsMA20 = ma20 ? ((currentPrice - ma20) / ma20) * 100 : 0;
 
+          // Tính % chênh lệch so với MA200
+          const pctVsMA200 = ma200 ? ((currentPrice - ma200) / ma200) * 100 : 0;
+
           // Tính % so với Vol20
           const pctVsVol20 = vol20 ? ((currentVol - vol20) / vol20) * 100 : 0;
 
-          // 8️⃣ Xác định hành động theo rule chi tiết
-          const action = getSignal(
+          // Tính giá đỉnh 6 tháng
+          const series = hist.map(item => ({
+            high: item.high,
+            timestamp: item.date.getTime() / 1000, // đổi Date thành timestamp (giây)
+          }));
+          const high6M = calcHighInMonths(series, 6) ?? 0;
+
+          // Tính % so với high6M
+          const pctVsHigh6M = high6M ? ((currentPrice - high6M) / high6M) * 100 : 0;
+          console.info("pctVsHigh6M: ", pctVsHigh6M)
+
+          // 3️⃣ Tính RSI14(W1)
+          const hist2Year = await getHistory(ticker, "2y", "1wk");
+          if (!hist2Year || hist2Year.length === 0) continue;
+          const rsi14W1 = calcRSILast(hist2Year, 14) ?? 0;
+          console.log("RSI14(W1) hiện tại:", rsi14W1);
+
+          // Xác định hành động theo rule chi tiết
+          const actionShortTerm = getSignalShortTerm(
             currentPrice,
             ma20,
-            rsi14,
+            rsi14D1,
             avgCost,
             currentVol,
             vol20
           );
+          
+          // Xác định hành động theo rule chi tiết
+          const actionLongTerm = getSignalLongTerm(
+            currentPrice,
+            ma200,
+            rsi14W1,
+            rsi14D1,
+            high6M,
+          );
+
 
           out.push({
             ticker,
@@ -121,12 +164,18 @@ export default function PortfolioTable({
             plPct,
             currentPrice,
             ma20,
+            high6M,
+            ma200,
             pctVsMA20,
-            rsi14,
+            pctVsHigh6M,
+            pctVsMA200,
+            rsi14D1,
+            rsi14W1,
             currentVol,
             vol20,
             pctVsVol20,
-            action,
+            actionShortTerm,
+            actionLongTerm
           });
         } catch (err) {
           console.error("renderPortfolio error for", ticker, err);
@@ -152,13 +201,13 @@ export default function PortfolioTable({
     }).format(num);
   };
 
-  const formatCurrency = (num: number | null | undefined) => {
+  const formatCurrency = (num: number | null | undefined, decimals = 0) => {
     if (num === null || num === undefined) return "-";
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
       currency: "VND",
-      // minimumFractionDigits: 2,
-      // maximumFractionDigits: 2,
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
     }).format(num);
   };
 
@@ -204,7 +253,7 @@ export default function PortfolioTable({
         className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${bg}`}
         aria-hidden
       >
-        {formatNumber(value)}
+        {formatNumber(value, 0)}
       </span>
     );
   };
@@ -239,7 +288,7 @@ export default function PortfolioTable({
         aria-hidden
       >
         {icon}
-        {formatPercent(value)}
+        {formatPercent(value, 1)}
       </span>
     );
   };
@@ -295,9 +344,39 @@ export default function PortfolioTable({
               </th>
               <th
                 className="border p-2"
-                title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100"
+                title="High6M = Giá đỉnh 6 tháng gần đây"
               >
-                RSI(14)
+                High6M
+              </th>
+              <th
+                className="border p-2"
+                title="% so với High6M = (Giá hiện tại - High6M)/High6M * 100%"
+              >
+                % so với High6M
+              </th>
+              <th
+                className="border p-2"
+                title="MA200 = Trung bình 200 phiên gần nhất (gồm giá đóng cửa)"
+              >
+                MA200
+              </th>
+              <th
+                className="border p-2"
+                title="% so với MA200 = (Giá hiện tại - MA200)/MA200 * 100%"
+              >
+                % so với MA200
+              </th>
+              <th
+                className="border p-2"
+                title="RSI14(W1) = Chỉ số sức mạnh tương đối 14 phiên theo tuần, đo quá mua / quá bán → 0-100"
+              >
+                RSI14(W1)
+              </th>
+              <th
+                className="border p-2"
+                title="RSI14(D1) = Chỉ số sức mạnh tương đối 14 phiên theo ngày, đo quá mua / quá bán → 0-100"
+              >
+                RSI14(D1)
               </th>
               <th
                 className="border p-2"
@@ -320,12 +399,27 @@ export default function PortfolioTable({
               <th
                 className="border p-2"
                 title={`Gợi ý hành động dựa trên rule đầu tư:
+MUA
+-Giá hiện tại giảm 10-20% so với đỉnh 6 tháng gần đây.
+-Giá hiện tại trên MA200.
+-RSI14(W1) <55 (tránh vùng quá mua trung hạn).
+-RSI14(D1) <40 (giảm quá mức ngắn hạn) 
+BÁN:
+-RSI14(W1)>65
+-Giá hiện tại lớn hơi MA200 khoảng 25%
+-Giá hiện tại lớn hơn hoạc bằng đỉnh 6 tháng gần đây.`}
+              >
+                Gợi ý dài hạn
+              </th>
+              <th
+                className="border p-2"
+                title={`Gợi ý hành động dựa trên rule đầu tư:
 - Gom mạnh: Giá < MA20 -5% và RSI < 35
 - Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
 - Bán bớt: Giá > MA20 +10% và RSI > 70
 - Cut-loss: Giá giảm > 15% so với Giá vốn TB`}
               >
-                Gợi ý
+                Gợi ý ngắn hạn
               </th>
             </tr>
           </thead>
@@ -371,13 +465,44 @@ export default function PortfolioTable({
                   title="% chênh lệch so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
                   className="border p-2"
                 >
-                  <PercentChip value={r.pctVsMA20} />
+                  {/* <PercentChip value={r.pctVsMA20} /> */}
+                  {formatPercent(r.pctVsMA20, 1)}
                 </td>
                 <td
-                  title="RSI14 - Chỉ số sức mạnh tương đối 14 phiên"
+                  title="High6M - Giá đỉnh 6 tháng gần đây"
                   className="border p-2"
                 >
-                  {RSIFormat(r.rsi14)}
+                  {formatCurrency(r.high6M)}
+                </td>
+                <td
+                  title="% chênh lệch so với High6M = (Giá hiện tại - High6M)/High6M * 100%"
+                  className="border p-2"
+                >
+                  <PercentChip value={r.pctVsHigh6M} />
+                </td>
+                <td
+                  title="MA200 - Giá trung bình 200 phiên"
+                  className="border p-2"
+                >
+                  {formatCurrency(r.ma200)}
+                </td>
+                <td
+                  title="% chênh lệch so với MA200 = (Giá hiện tại - MA200)/MA200 * 100%"
+                  className="border p-2"
+                >
+                  <PercentChip value={r.pctVsMA200} />
+                </td>
+                <td
+                  title="RSI14D1 - Chỉ số sức mạnh tương đối 14 phiên theo ngày"
+                  className="border p-2"
+                >
+                  {RSIFormat(r.rsi14D1)}
+                </td>
+                <td
+                  title="RSI14W1 - Chỉ số sức mạnh tương đối 14 phiên theo tuần"
+                  className="border p-2"
+                >
+                  {RSIFormat(r.rsi14W1)}
                 </td>
                 <td title="Khối lượng hiện tại" className="border p-2">
                   {formatNumber(r.currentVol, 0)}
@@ -393,13 +518,19 @@ export default function PortfolioTable({
                   className="border p-2"
                 >
                   {/* <PercentChip value={r.pctVsVol20} /> */}
-                  {formatPercent(r.pctVsVol20)}
+                  {formatPercent(r.pctVsVol20, 1)}
                 </td>
                 <td
                   title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss"
                   className="border p-2 font-bold whitespace-nowrap text-center"
                 >
-                  {r.action}
+                  {r.actionLongTerm}
+                </td>
+                                <td
+                  title="Gợi ý hành động: Mua / Bán / Gom mạnh / Cut-loss"
+                  className="border p-2 font-bold whitespace-nowrap text-center"
+                >
+                  {r.actionShortTerm}
                 </td>
               </tr>
             ))}
@@ -463,20 +594,61 @@ export default function PortfolioTable({
               <span>{formatCurrency(r.ma20)}</span>
             </div>
             <div
-              className="flex justify-between font-bold"
+              // className="flex justify-between font-bold"
+              className="flex justify-between"
               title="% so với MA20 = (Giá hiện tại - MA20)/MA20 * 100%"
             >
-              <span>% vs MA20:</span>
+              <span>% so với MA20:</span>
               <span>
-                <PercentChip value={r.pctVsMA20} />
+                {/* <PercentChip value={r.pctVsMA20} /> */}
+                {formatPercent(r.pctVsMA20, 1)}
+              </span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="High6M = Giá đỉnh 6 tháng gần đây"
+            >
+            <span>High6M:</span>
+              <span>{formatCurrency(r.high6M)}</span>
+            </div>
+            <div
+              className="flex justify-between font-bold"
+              title="% so với High6M = (Giá hiện tại - High6M)/High6M * 100%"
+            >
+              <span>% so với High6M:</span>
+              <span>
+                <PercentChip value={r.pctVsHigh6M} />
+              </span>
+            </div>
+            <div
+              className="flex justify-between"
+              title="MA20 = Trung bình 20 phiên gần nhất (gồm giá đóng cửa)"
+            >
+            <span>MA200:</span>
+              <span>{formatCurrency(r.ma200)}</span>
+            </div>
+            <div
+              className="flex justify-between font-bold"
+              title="% so với MA200 = (Giá hiện tại - MA200)/MA200 * 100%"
+            >
+              <span>% so với MA200:</span>
+              <span>
+                <PercentChip value={r.pctVsMA200} />
               </span>
             </div>
             <div
               className="flex justify-between font-bold"
-              title="RSI(14) = Chỉ số sức mạnh tương đối 14 phiên, đo quá mua / quá bán → 0-100"
+              title="RSI14(W1) = Chỉ số sức mạnh tương đối 14 phiên theo tuần, đo quá mua / quá bán → 0-100"
             >
-              <span>RSI(14):</span>
-              <span>{RSIFormat(r.rsi14)}</span>
+              <span>RSI14(W1):</span>
+              <span>{RSIFormat(r.rsi14W1)}</span>
+            </div>
+            <div
+              className="flex justify-between font-bold"
+              title="RSI14(D1) = Chỉ số sức mạnh tương đối 14 phiên theo ngày, đo quá mua / quá bán → 0-100"
+            >
+              <span>RSI14(D1):</span>
+              <span>{RSIFormat(r.rsi14D1)}</span>
             </div>
             <div
               className="flex justify-between"
@@ -505,13 +677,30 @@ export default function PortfolioTable({
             <div
               className="flex justify-between whitespace-nowrap"
               title={`Gợi ý hành động dựa trên rule đầu tư:
+MUA
+-Giá hiện tại giảm 10-20% so với đỉnh 6 tháng gần đây.
+-Giá hiện tại trên MA200.
+-RSI14(W1) <55 (tránh vùng quá mua trung hạn).
+-RSI14(D1) <40 (giảm quá mức ngắn hạn) 
+
+BÁN:
+-RSI14(W1)>65
+-Giá hiện tại lớn hơi MA200 khoảng 25%
+-Giá hiện tại lớn hơn hoạc bằng đỉnh 6 tháng gần đây.`}
+            >
+              <span>Gợi ý dài hạn:</span>
+              <span className="font-bold">{r.actionLongTerm}</span>
+            </div>
+            <div
+              className="flex justify-between whitespace-nowrap"
+              title={`Gợi ý hành động dựa trên rule đầu tư:
 - Gom mạnh: Giá < MA20 -5% và RSI < 35
 - Mua DCA: Giá ~ MA20 -5 -> +10% và RSI 40-60
 - Bán bớt: Giá > MA20 +10% và RSI > 70
 - Cut-loss: Giá giảm > 15% so với Giá vốn TB`}
             >
-              <span>Gợi ý:</span>
-              <span className="font-bold">{r.action}</span>
+              <span>Gợi ý ngắn hạn:</span>
+              <span className="font-bold">{r.actionShortTerm}</span>
             </div>
           </div>
         ))}

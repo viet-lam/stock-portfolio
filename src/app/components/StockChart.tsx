@@ -19,6 +19,7 @@ export default function StockChart({ ticker, range = "3mo" }: any) {
       const labels = history.map((p) => p.date.toLocaleDateString());
       const prices = history.map((p) => p.close);
       const ma20 = calcMA(history, 20);
+      // const ma200 = calcMA(history, 200);
 
       if (chartInstance) {
         chartInstance.destroy();
