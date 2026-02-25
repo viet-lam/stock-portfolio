@@ -5,6 +5,11 @@ export default function InvestmentNote() {
         id="note"
         className="bg-emerald-50 border border-emerald-500 p-5 md:p-6 rounded-xl my-4 text-sm leading-relaxed"
       >
+        <h2 className="mt-0 text-lg md:text-xl font-semibold mb-3">
+          <b className="text-amber-600">📤 Bán hết:</b> Giá &gt; MA20 + 10%{" "}
+          <i>và</i> RSI(14) &gt; 70
+        </h2>
+
         <h3 className="mt-0 text-lg md:text-xl font-semibold mb-3">
           📌 Quan điểm đầu tư (Kim chỉ nam)
         </h3>
